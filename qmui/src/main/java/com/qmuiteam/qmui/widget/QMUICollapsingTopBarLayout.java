@@ -1,4 +1,20 @@
 /*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +36,7 @@ import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Rect;
@@ -27,51 +44,57 @@ import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.IntDef;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
-import android.support.annotation.RestrictTo;
-import android.support.annotation.StyleRes;
-import android.support.design.widget.AppBarLayout;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.graphics.drawable.DrawableCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.view.ViewCompat;
-import android.support.v4.view.WindowInsetsCompat;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.view.WindowInsets;
 import android.widget.FrameLayout;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.StyleRes;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.core.view.GravityCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import com.google.android.material.appbar.AppBarLayout;
+import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.qmuiteam.qmui.QMUIInterpolatorStaticHolder;
 import com.qmuiteam.qmui.R;
+import com.qmuiteam.qmui.skin.IQMUISkinDispatchInterceptor;
+import com.qmuiteam.qmui.skin.QMUISkinHelper;
 import com.qmuiteam.qmui.util.QMUICollapsingTextHelper;
 import com.qmuiteam.qmui.util.QMUILangHelper;
-import com.qmuiteam.qmui.util.QMUINotchHelper;
+import com.qmuiteam.qmui.util.QMUIResHelper;
 import com.qmuiteam.qmui.util.QMUIViewHelper;
 import com.qmuiteam.qmui.util.QMUIViewOffsetHelper;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 
-import static android.support.annotation.RestrictTo.Scope.LIBRARY_GROUP;
+import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
 /**
- * 参考 {@link android.support.design.widget.CollapsingToolbarLayout}, 适配 QMUITopBar
+ * 参考 {@link CollapsingToolbarLayout}, 适配 QMUITopBar
  *
  * @author cginechen
  * @date 2017-09-02
  */
 
-public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowInsetLayout {
+public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowInsetLayout, IQMUISkinDispatchInterceptor {
 
     private static final int DEFAULT_SCRIM_ANIMATION_DURATION = 600;
 
@@ -99,10 +122,16 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
 
     private AppBarLayout.OnOffsetChangedListener mOnOffsetChangedListener;
     private ValueAnimator.AnimatorUpdateListener mScrimUpdateListener;
+    private ArrayList<OnOffsetUpdateListener> mOnOffsetUpdateListeners = new ArrayList<>();
 
     int mCurrentOffset;
 
     Object mLastInsets;
+
+    private int mContentScrimSkinAttr = 0;
+    private int mStatusBarScrimSkinAttr = 0;
+    private int mCollapsedTextColorSkinAttr = 0;
+    private int mExpandedTextColorSkinAttr = 0;
 
     public QMUICollapsingTopBarLayout(Context context) {
         this(context, null);
@@ -175,17 +204,21 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
                 R.styleable.QMUICollapsingTopBarLayout_qmui_scrimAnimationDuration,
                 DEFAULT_SCRIM_ANIMATION_DURATION);
 
-        setContentScrim(a.getDrawable(R.styleable.QMUICollapsingTopBarLayout_qmui_contentScrim));
-        setStatusBarScrim(a.getDrawable(R.styleable.QMUICollapsingTopBarLayout_qmui_statusBarScrim));
 
         mTopBarId = a.getResourceId(R.styleable.QMUICollapsingTopBarLayout_qmui_topBarId, -1);
 
+        if (a.getBoolean(R.styleable.QMUICollapsingTopBarLayout_qmui_followTopBarCommonSkin, false)) {
+            followTopBarCommonSkin();
+        } else {
+            setContentScrimInner(a.getDrawable(R.styleable.QMUICollapsingTopBarLayout_qmui_contentScrim));
+            setStatusBarScrimInner(a.getDrawable(R.styleable.QMUICollapsingTopBarLayout_qmui_statusBarScrim));
+        }
         a.recycle();
 
         setWillNotDraw(false);
 
         ViewCompat.setOnApplyWindowInsetsListener(this,
-                new android.support.v4.view.OnApplyWindowInsetsListener() {
+                new androidx.core.view.OnApplyWindowInsetsListener() {
                     @Override
                     public WindowInsetsCompat onApplyWindowInsets(View v, WindowInsetsCompat insets) {
                         return setWindowInsets(insets);
@@ -200,6 +233,21 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
             }
         }
         return insets;
+    }
+
+    public void followTopBarCommonSkin() {
+        setCollapsedTextColorSkinAttr(R.attr.qmui_skin_support_topbar_title_color);
+        setExpandedTextColorSkinAttr(R.attr.qmui_skin_support_topbar_title_color);
+        setContentScrimSkinAttr(R.attr.qmui_skin_support_topbar_bg);
+        setStatusBarScrimSkinAttr(R.attr.qmui_skin_support_topbar_bg);
+    }
+
+    @Override
+    public void onViewAdded(View child) {
+        super.onViewAdded(child);
+        if (child instanceof QMUITopBar) {
+            ((QMUITopBar) child).disableBackgroundSetter();
+        }
     }
 
     @Override
@@ -265,9 +313,9 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
 
     private int getWindowInsetTop() {
         if (mLastInsets != null) {
-            if(mLastInsets instanceof WindowInsetsCompat){
+            if (mLastInsets instanceof WindowInsetsCompat) {
                 return ((WindowInsetsCompat) mLastInsets).getSystemWindowInsetTop();
-            }else if(mLastInsets instanceof Rect){
+            } else if (mLastInsets instanceof Rect) {
                 return ((Rect) mLastInsets).top;
             }
         }
@@ -349,6 +397,7 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
         return directChild;
     }
 
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         ensureToolbar();
@@ -373,10 +422,8 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
             }
         }
 
-        // Update our child view offset helpers. This needs to be done after the title has been
-        // setup, so that any Toolbars are in their original position
         for (int i = 0, z = getChildCount(); i < z; i++) {
-            getViewOffsetHelper(getChildAt(i)).onViewLayout();
+            getViewOffsetHelper(getChildAt(i)).onViewLayout(false);
         }
 
         // Update the collapsed bounds by getting it's transformed bounds
@@ -387,12 +434,11 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
             QMUIViewHelper.getDescendantRect(this, mTopBar, mTmpRect);
 //            mTmpRect.top = mTmpRect.top - topBarInsetAdjustTop;
             Rect rect = mTopBar.getTitleContainerRect();
-            int horStart = mTmpRect.top + maxOffset;
             mCollapsingTextHelper.setCollapsedBounds(
                     mTmpRect.left + rect.left,
-                    horStart + rect.top,
+                    mTmpRect.top + maxOffset + rect.top,
                     mTmpRect.left + rect.right,
-                    horStart + rect.bottom);
+                    mTmpRect.top + maxOffset + rect.bottom);
 
             // Update the expanded bounds
             mCollapsingTextHelper.setExpandedBounds(
@@ -403,6 +449,7 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
             // Now recalculate using the new bounds
             mCollapsingTextHelper.recalculate();
         }
+
 
         // Finally, set our minimum height to enable proper AppBarLayout collapsing
         if (mTopBar != null) {
@@ -418,6 +465,10 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
         }
 
         updateScrimVisibility();
+
+        for (int i = 0, z = getChildCount(); i < z; i++) {
+            getViewOffsetHelper(getChildAt(i)).applyOffsets();
+        }
     }
 
     private static int getHeightWithMargins(@NonNull final View view) {
@@ -574,6 +625,13 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
         return mScrimAlpha;
     }
 
+    public void setContentScrimSkinAttr(int contentScrimSkinAttr) {
+        mContentScrimSkinAttr = contentScrimSkinAttr;
+        if (contentScrimSkinAttr != 0) {
+            setStatusBarScrimInner(QMUISkinHelper.getSkinDrawable(this, contentScrimSkinAttr));
+        }
+    }
+
     /**
      * Set the drawable to use for the content scrim from resources. Providing null will disable
      * the scrim functionality.
@@ -582,6 +640,11 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
      * @see #getContentScrim()
      */
     public void setContentScrim(@Nullable Drawable drawable) {
+        mContentScrimSkinAttr = 0;
+        setContentScrimInner(drawable);
+    }
+
+    private void setContentScrimInner(@Nullable Drawable drawable) {
         if (mContentScrim != drawable) {
             if (mContentScrim != null) {
                 mContentScrim.setCallback(null);
@@ -637,6 +700,11 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
      * @see #getStatusBarScrim()
      */
     public void setStatusBarScrim(@Nullable Drawable drawable) {
+        mStatusBarScrimSkinAttr = 0;
+        setStatusBarScrimInner(drawable);
+    }
+
+    private void setStatusBarScrimInner(@Nullable Drawable drawable) {
         if (mStatusBarScrim != drawable) {
             if (mStatusBarScrim != null) {
                 mStatusBarScrim.setCallback(null);
@@ -653,6 +721,13 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
                 mStatusBarScrim.setAlpha(mScrimAlpha);
             }
             ViewCompat.postInvalidateOnAnimation(this);
+        }
+    }
+
+    public void setStatusBarScrimSkinAttr(int statusBarScrimSkinAttr) {
+        mStatusBarScrimSkinAttr = statusBarScrimSkinAttr;
+        if (mStatusBarScrimSkinAttr != 0) {
+            setStatusBarScrimInner(QMUISkinHelper.getSkinDrawable(this, statusBarScrimSkinAttr));
         }
     }
 
@@ -755,7 +830,16 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
      * @param colors ColorStateList containing the new text colors
      */
     public void setCollapsedTitleTextColor(@NonNull ColorStateList colors) {
+        mCollapsedTextColorSkinAttr = 0;
         mCollapsingTextHelper.setCollapsedTextColor(colors);
+    }
+
+    public void setCollapsedTextColorSkinAttr(int attr) {
+        mCollapsedTextColorSkinAttr = attr;
+        if (attr != 0) {
+            mCollapsingTextHelper.setCollapsedTextColor(
+                    QMUISkinHelper.getSkinColorStateList(this, attr));
+        }
     }
 
     /**
@@ -797,7 +881,16 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
      * @param colors ColorStateList containing the new text colors
      */
     public void setExpandedTitleTextColor(@NonNull ColorStateList colors) {
+        mExpandedTextColorSkinAttr = 0;
         mCollapsingTextHelper.setExpandedTextColor(colors);
+    }
+
+    public void setExpandedTextColorSkinAttr(int attr) {
+        mExpandedTextColorSkinAttr = attr;
+        if (attr != 0) {
+            mCollapsingTextHelper.setExpandedTextColor(
+                    QMUISkinHelper.getSkinColorStateList(this, attr));
+        }
     }
 
     /**
@@ -1190,13 +1283,19 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
         }
     }
 
+
     final int getMaxOffsetForPinChild(View child) {
         final QMUIViewOffsetHelper offsetHelper = getViewOffsetHelper(child);
         final QMUICollapsingTopBarLayout.LayoutParams lp = (QMUICollapsingTopBarLayout.LayoutParams) child.getLayoutParams();
-        return getHeight()
-                - offsetHelper.getLayoutTop()
-                - child.getHeight()
-                - lp.bottomMargin;
+        return getHeight() - offsetHelper.getLayoutTop() - child.getHeight() - lp.bottomMargin;
+    }
+
+    public void addOnOffsetUpdateListener(@NonNull OnOffsetUpdateListener listener) {
+        mOnOffsetUpdateListeners.add(listener);
+    }
+
+    public void removeOnOffsetUpdateListener(@NonNull OnOffsetUpdateListener listener) {
+        mOnOffsetUpdateListeners.remove(listener);
     }
 
     private class OffsetUpdateListener implements AppBarLayout.OnOffsetChangedListener {
@@ -1236,8 +1335,37 @@ public class QMUICollapsingTopBarLayout extends FrameLayout implements IWindowIn
             // Update the collapsing text's fraction
             final int expandRange = getHeight() - ViewCompat.getMinimumHeight(
                     QMUICollapsingTopBarLayout.this) - insetTop;
-            mCollapsingTextHelper.setExpansionFraction(
-                    Math.abs(verticalOffset) / (float) expandRange);
+            float expansionFraction = Math.abs(verticalOffset) / (float) expandRange;
+            mCollapsingTextHelper.setExpansionFraction(expansionFraction);
+            for (OnOffsetUpdateListener listener : mOnOffsetUpdateListeners) {
+                listener.onOffsetChanged(
+                        QMUICollapsingTopBarLayout.this, verticalOffset, expansionFraction);
+            }
         }
+    }
+
+    @Override
+    public boolean intercept(int skinIndex, @NotNull Resources.Theme theme) {
+        if (mContentScrimSkinAttr != 0) {
+            setContentScrimInner(QMUIResHelper.getAttrDrawable(getContext(), theme, mContentScrimSkinAttr));
+        }
+        if (mStatusBarScrimSkinAttr != 0) {
+            setStatusBarScrimInner(QMUIResHelper.getAttrDrawable(getContext(), theme, mStatusBarScrimSkinAttr));
+        }
+
+        if (mCollapsedTextColorSkinAttr != 0) {
+            mCollapsingTextHelper.setCollapsedTextColor(
+                    QMUISkinHelper.getSkinColorStateList(this, mCollapsedTextColorSkinAttr));
+        }
+        if (mExpandedTextColorSkinAttr != 0) {
+            mCollapsingTextHelper.setExpandedTextColor(
+                    QMUISkinHelper.getSkinColorStateList(this, mExpandedTextColorSkinAttr)
+            );
+        }
+        return false;
+    }
+
+    public interface OnOffsetUpdateListener {
+        void onOffsetChanged(QMUICollapsingTopBarLayout layout, int offset, float expandFraction);
     }
 }

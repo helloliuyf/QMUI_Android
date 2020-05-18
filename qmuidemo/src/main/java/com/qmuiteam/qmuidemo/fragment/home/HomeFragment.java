@@ -1,19 +1,46 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmuidemo.fragment.home;
 
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
-import com.qmuiteam.qmui.util.QMUIResHelper;
-import com.qmuiteam.qmui.widget.QMUITabSegment;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+
+import com.qmuiteam.qmui.arch.effect.QMUIFragmentEffectHandler;
+import com.qmuiteam.qmui.arch.effect.QMUIFragmentMapEffectHandler;
+import com.qmuiteam.qmui.arch.effect.MapEffect;
+import com.qmuiteam.qmui.util.QMUIDisplayHelper;
+import com.qmuiteam.qmui.widget.tab.QMUITab;
+import com.qmuiteam.qmui.widget.tab.QMUITabBuilder;
+import com.qmuiteam.qmui.widget.tab.QMUITabSegment;
 import com.qmuiteam.qmuidemo.R;
 import com.qmuiteam.qmuidemo.base.BaseFragment;
+import com.qmuiteam.qmuidemo.model.CustomEffect;
 
 import java.util.HashMap;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -26,8 +53,10 @@ import butterknife.ButterKnife;
 public class HomeFragment extends BaseFragment {
     private final static String TAG = HomeFragment.class.getSimpleName();
 
-    @BindView(R.id.pager) ViewPager mViewPager;
-    @BindView(R.id.tabs) QMUITabSegment mTabSegment;
+    @BindView(R.id.pager)
+    ViewPager mViewPager;
+    @BindView(R.id.tabs)
+    QMUITabSegment mTabSegment;
     private HashMap<Pager, HomeController> mPages;
     private PagerAdapter mPagerAdapter = new PagerAdapter() {
 
@@ -71,6 +100,42 @@ public class HomeFragment extends BaseFragment {
         }
     };
 
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        registerEffect(this, new QMUIFragmentMapEffectHandler() {
+            @Override
+            public boolean shouldHandleEffect(@NonNull MapEffect effect) {
+                return effect.getValue("interested_type_key") != null;
+            }
+
+            @Override
+            public void handleEffect(@NonNull MapEffect effect) {
+                Object value = effect.getValue("interested_value_key");
+                if(value instanceof String){
+                    Toast.makeText(context, ((String)value), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        registerEffect(this, new QMUIFragmentEffectHandler<CustomEffect>() {
+            @Override
+            public boolean shouldHandleEffect(@NonNull CustomEffect effect) {
+                return true;
+            }
+
+            @Override
+            public void handleEffect(@NonNull CustomEffect effect) {
+                Toast.makeText(context, effect.getContent(), Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void handleEffect(@NonNull List<CustomEffect> effects) {
+               // we can only handle the last effect.
+               handleEffect(effects.get(effects.size() - 1));
+            }
+        });
+    }
 
     @Override
     protected View onCreateView() {
@@ -81,46 +146,29 @@ public class HomeFragment extends BaseFragment {
         return layout;
     }
 
+
     private void initTabs() {
-        int normalColor = QMUIResHelper.getAttrColor(getActivity(), R.attr.qmui_config_color_gray_6);
-        int selectColor = QMUIResHelper.getAttrColor(getActivity(), R.attr.qmui_config_color_blue);
-        mTabSegment.setDefaultNormalColor(normalColor);
-        mTabSegment.setDefaultSelectedColor(selectColor);
-//        mTabSegment.setDefaultTabIconPosition(QMUITabSegment.ICON_POSITION_BOTTOM);
 
-//        // 如果你的 icon 显示大小和实际大小不吻合:
-//        // 1. 设置icon 的 bounds
-//        // 2. Tab 使用拥有5个参数的构造器
-//        // 3. 最后一个参数（setIntrinsicSize）设置为false
-//        int iconShowSize = QMUIDisplayHelper.dp2px(getContext(), 20);
-//        Drawable normalDrawable = ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component);
-//        normalDrawable.setBounds(0, 0, iconShowSize, iconShowSize);
-//        Drawable selectDrawable = ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component_selected);
-//
-//        selectDrawable.setBounds(0, 0, iconShowSize, iconShowSize);
-//
-//        QMUITabSegment.Tab component = new QMUITabSegment.Tab(
-//                normalDrawable,
-//                normalDrawable,
-//                "Components", false, false
-//        );
+        QMUITabBuilder builder = mTabSegment.tabBuilder();
+        builder.setSelectedIconScale(1.2f)
+                .setTextSize(QMUIDisplayHelper.sp2px(getContext(), 13), QMUIDisplayHelper.sp2px(getContext(), 15))
+                .setDynamicChangeIconColor(false);
+        QMUITab component = builder
+                .setNormalDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component))
+                .setSelectedDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component_selected))
+                .setText("Components")
+                .build(getContext());
+        QMUITab util = builder
+                .setNormalDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util))
+                .setSelectedDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util_selected))
+                .setText("Helper")
+                .build(getContext());
+        QMUITab lab = builder
+                .setNormalDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab))
+                .setSelectedDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab_selected))
+                .setText("Lab")
+                .build(getContext());
 
-        QMUITabSegment.Tab component = new QMUITabSegment.Tab(
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component),
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component_selected),
-                "Components", false
-        );
-
-        QMUITabSegment.Tab util = new QMUITabSegment.Tab(
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util),
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util_selected),
-                "Helper", false
-        );
-        QMUITabSegment.Tab lab = new QMUITabSegment.Tab(
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab),
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab_selected),
-                "Lab", false
-        );
         mTabSegment.addTab(component)
                 .addTab(util)
                 .addTab(lab);
@@ -173,5 +221,10 @@ public class HomeFragment extends BaseFragment {
     @Override
     protected boolean canDragBack() {
         return false;
+    }
+
+    @Override
+    public Object onLastFragmentFinish() {
+        return null;
     }
 }

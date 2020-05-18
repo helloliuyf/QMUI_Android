@@ -1,14 +1,36 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmuidemo.fragment.components;
 
 import android.animation.ValueAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 
+import com.qmuiteam.qmui.layout.QMUIConstraintLayout;
 import com.qmuiteam.qmui.widget.QMUICollapsingTopBarLayout;
 import com.qmuiteam.qmui.widget.QMUITopBar;
+import com.qmuiteam.qmuidemo.fragment.components.viewpager.QDLazyTestObserver;
 import com.qmuiteam.qmuidemo.manager.QDDataManager;
 import com.qmuiteam.qmuidemo.R;
 import com.qmuiteam.qmuidemo.adaptor.QDRecyclerViewAdapter;
@@ -53,7 +75,21 @@ public class QDCollapsingTopBarLayoutFragment extends BaseFragment {
             }
         });
 
+        mCollapsingTopBarLayout.addOnOffsetUpdateListener(new QMUICollapsingTopBarLayout.OnOffsetUpdateListener() {
+            @Override
+            public void onOffsetChanged(QMUICollapsingTopBarLayout layout, int offset, float expandFraction) {
+                Log.i(TAG, "offset = " + offset + "; expandFraction = " + expandFraction);
+            }
+        });
+
         return rootView;
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        getLazyViewLifecycleOwner().getLifecycle().addObserver(
+                new QDLazyTestObserver("QDCollapsingTopBar"));
     }
 
     @Override

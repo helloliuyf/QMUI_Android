@@ -1,6 +1,22 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.util;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -27,6 +43,20 @@ public class QMUILangHelper {
     public static int getNumberDigits(long number) {
         if (number <= 0) return 0;
         return (int) (Math.log10(number) + 1);
+    }
+
+
+    public static String formatNumberToLimitedDigits(int number, int maxDigits) {
+        if (getNumberDigits(number) > maxDigits) {
+            StringBuilder result = new StringBuilder();
+            for (int digit = 1; digit <= maxDigits; digit++) {
+                result.append("9");
+            }
+            result.append("+");
+            return result.toString();
+        } else {
+            return String.valueOf(number);
+        }
     }
 
     /**

@@ -1,11 +1,24 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmuidemo.fragment.util;
 
 import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,15 +27,21 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.qmuiteam.qmui.util.QMUIDisplayHelper;
+import com.qmuiteam.qmui.util.QMUIResHelper;
 import com.qmuiteam.qmui.util.QMUIViewHelper;
-import com.qmuiteam.qmui.widget.QMUITabSegment;
 import com.qmuiteam.qmui.widget.QMUITopBarLayout;
+import com.qmuiteam.qmui.widget.tab.QMUITab;
+import com.qmuiteam.qmui.widget.tab.QMUITabBuilder;
+import com.qmuiteam.qmui.widget.tab.QMUITabSegment;
 import com.qmuiteam.qmuidemo.R;
 import com.qmuiteam.qmuidemo.base.BaseFragment;
 import com.qmuiteam.qmuidemo.lib.Group;
 import com.qmuiteam.qmuidemo.lib.annotation.Widget;
 import com.qmuiteam.qmuidemo.manager.QDDataManager;
 
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -91,22 +110,27 @@ public class QDNotchHelperFragment extends BaseFragment {
     }
 
     private void initTabs() {
-        QMUITabSegment.Tab component = new QMUITabSegment.Tab(
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component),
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component_selected),
-                "Components", false
-        );
+        QMUITabBuilder builder = mTabSegment.tabBuilder();
+        builder.setColorAttr(R.attr.qmui_config_color_gray_6, R.attr.qmui_config_color_blue)
+                .setSelectedIconScale(2f)
+                .setTextSize(QMUIDisplayHelper.sp2px(getContext(), 14), QMUIDisplayHelper.sp2px(getContext(), 16))
+                .setDynamicChangeIconColor(false);
+        QMUITab component = builder
+                .setNormalDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component))
+                .setSelectedDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_component_selected))
+                .setText("Components")
+                .build(getContext());
+        QMUITab util = builder
+                .setNormalDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util))
+                .setSelectedDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util_selected))
+                .setText("Helper")
+                .build(getContext());
+        QMUITab lab = builder
+                .setNormalDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab))
+                .setSelectedDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab_selected))
+                .setText("Lab")
+                .build(getContext());
 
-        QMUITabSegment.Tab util = new QMUITabSegment.Tab(
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util),
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_util_selected),
-                "Helper", false
-        );
-        QMUITabSegment.Tab lab = new QMUITabSegment.Tab(
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab),
-                ContextCompat.getDrawable(getContext(), R.mipmap.icon_tabbar_lab_selected),
-                "Lab", false
-        );
         mTabSegment.addTab(component)
                 .addTab(util)
                 .addTab(lab);

@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.util;
 
 import android.annotation.SuppressLint;
@@ -8,7 +24,7 @@ import android.content.res.Configuration;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.qmuiteam.qmui.QMUILog;
@@ -120,41 +136,46 @@ public class QMUIDeviceHelper {
         return "v9".equals(sMiuiVersionName);
     }
 
-    public static boolean isFlymeVersionHigher5_2_4() {
-        //查不到默认高于5.2.4
-        boolean isHigher = true;
+    public static boolean isFlymeLowerThan(int majorVersion){
+        return isFlymeLowerThan(majorVersion, 0, 0);
+    }
+
+    public static boolean isFlymeLowerThan(int majorVersion, int minorVersion, int patchVersion) {
+        boolean isLower = false;
         if (sFlymeVersionName != null && !sFlymeVersionName.equals("")) {
-            Pattern pattern = Pattern.compile("(\\d+\\.){2}\\d");
-            Matcher matcher = pattern.matcher(sFlymeVersionName);
-            if (matcher.find()) {
-                String versionString = matcher.group();
-                if (versionString != null && !versionString.equals("")) {
-                    String[] version = versionString.split("\\.");
-                    if (version.length == 3) {
-                        if (Integer.valueOf(version[0]) < 5) {
-                            isHigher = false;
-                        } else if (Integer.valueOf(version[0]) > 5) {
-                            isHigher = true;
-                        } else {
-                            if (Integer.valueOf(version[1]) < 2) {
-                                isHigher = false;
-                            } else if (Integer.valueOf(version[1]) > 2) {
-                                isHigher = true;
-                            } else {
-                                if (Integer.valueOf(version[2]) < 4) {
-                                    isHigher = false;
-                                } else if (Integer.valueOf(version[2]) >= 5) {
-                                    isHigher = true;
-                                }
+            try{
+                Pattern pattern = Pattern.compile("(\\d+\\.){2}\\d");
+                Matcher matcher = pattern.matcher(sFlymeVersionName);
+                if (matcher.find()) {
+                    String versionString = matcher.group();
+                    if (versionString.length() > 0) {
+                        String[] version = versionString.split("\\.");
+                        if (version.length >= 1) {
+                            if (Integer.parseInt(version[0]) < majorVersion) {
+                                isLower = true;
+                            }
+                        }
+
+                        if(version.length >= 2 && minorVersion > 0){
+                            if (Integer.parseInt(version[1]) < majorVersion) {
+                                isLower = true;
+                            }
+                        }
+
+                        if(version.length >= 3 && patchVersion > 0){
+                            if (Integer.parseInt(version[2]) < majorVersion) {
+                                isLower = true;
                             }
                         }
                     }
-
                 }
+            }catch (Throwable ignore){
+
             }
         }
-        return isMeizu() && isHigher;
+        return isMeizu() && isLower;
     }
+
 
     public static boolean isMeizu() {
         return isPhone(MEIZUBOARD) || isFlyme();

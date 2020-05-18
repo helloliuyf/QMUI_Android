@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.widget;
 
 import android.content.Context;
@@ -5,17 +21,18 @@ import android.content.res.TypedArray;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.TypedValue;
-import android.widget.TextView;
 
-import com.qmuiteam.qmui.util.QMUIDisplayHelper;
 import com.qmuiteam.qmui.R;
+import com.qmuiteam.qmui.util.QMUIDisplayHelper;
+
+import androidx.appcompat.widget.AppCompatTextView;
 
 /**
- * 使 {@link TextView} 在宽度固定的情况下，文字多到一行放不下时能缩小文字大小来自适应
+ * 使 {@link android.widget.TextView} 在宽度固定的情况下，文字多到一行放不下时能缩小文字大小来自适应
  *
  * http://stackoverflow.com/questions/2617266/how-to-adjust-text-font-size-to-fit-textview
  */
-public class QMUIFontFitTextView extends TextView {
+public class QMUIFontFitTextView extends AppCompatTextView {
 
     private Paint mTestPaint;
     private float minSize;

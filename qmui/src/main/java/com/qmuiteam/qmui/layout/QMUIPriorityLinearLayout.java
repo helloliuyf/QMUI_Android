@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.layout;
 
 import android.annotation.TargetApi;
@@ -52,6 +68,8 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
             for (View view : mTempDisposableChildList) {
                 LayoutParams lp = (LayoutParams) view.getLayoutParams();
                 lp.width = 0;
+                lp.leftMargin = 0;
+                lp.rightMargin = 0;
             }
         } else {
             int usefulWidth = widthSize - usedWidth;
@@ -71,11 +89,13 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
                 for (View view : mTempDisposableChildList) {
                     LayoutParams lp = (LayoutParams) view.getLayoutParams();
                     lp.width = 0;
+                    lp.leftMargin = 0;
+                    lp.rightMargin = 0;
                 }
             } else if (miniWidthChildTotalWidth < usefulWidth) {
                 // there is a space for disposableChildList
                 if (!mTempDisposableChildList.isEmpty()) {
-                    dispatchSpaceToDisposableChildList(mTempDisposableChildList,
+                    dispatchSpaceToDisposableChildList(mTempDisposableChildList, widthMeasureSpec, heightMeasureSpec,
                             usefulWidth - miniWidthChildTotalWidth);
                 }
             } else {
@@ -83,6 +103,8 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
                 for (View view : mTempDisposableChildList) {
                     LayoutParams lp = (LayoutParams) view.getLayoutParams();
                     lp.width = 0;
+                    lp.leftMargin = 0;
+                    lp.rightMargin = 0;
                 }
                 if (usefulWidth < miniWidthChildTotalWidth && !mTempMiniWidthChildList.isEmpty()) {
                     dispatchSpaceToMiniWidthChildList(mTempMiniWidthChildList, usefulWidth, miniWidthChildTotalWidth);
@@ -108,6 +130,8 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
             for (View view : mTempDisposableChildList) {
                 LayoutParams lp = (LayoutParams) view.getLayoutParams();
                 lp.height = 0;
+                lp.topMargin = 0;
+                lp.bottomMargin = 0;
             }
         } else {
             int usefulSpace = heightSize - usedHeight;
@@ -127,11 +151,13 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
                 for (View view : mTempDisposableChildList) {
                     LayoutParams lp = (LayoutParams) view.getLayoutParams();
                     lp.height = 0;
+                    lp.topMargin = 0;
+                    lp.bottomMargin = 0;
                 }
             } else if (miniSizeChildTotalLength < usefulSpace) {
                 // there is a space for disposableChildList
                 if (!mTempDisposableChildList.isEmpty()) {
-                    dispatchSpaceToDisposableChildList(mTempDisposableChildList,
+                    dispatchSpaceToDisposableChildList(mTempDisposableChildList, widthMeasureSpec, heightMeasureSpec,
                             usefulSpace - miniSizeChildTotalLength);
                 }
             } else {
@@ -139,6 +165,8 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
                 for (View view : mTempDisposableChildList) {
                     LayoutParams lp = (LayoutParams) view.getLayoutParams();
                     lp.width = 0;
+                    lp.topMargin = 0;
+                    lp.bottomMargin = 0;
                 }
                 if (usefulSpace < miniSizeChildTotalLength && !mTempMiniWidthChildList.isEmpty()) {
                     dispatchSpaceToMiniWidthChildList(mTempMiniWidthChildList, usefulSpace, miniSizeChildTotalLength);
@@ -191,22 +219,55 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
         return usedSize;
     }
 
-    protected void dispatchSpaceToDisposableChildList(ArrayList<View> childList, int usefulSpace) {
+    protected void dispatchSpaceToDisposableChildList(ArrayList<View> childList, int widthMeasureSpec, int heightMeasureSpec, int usefulSpace) {
+
         for (View view : childList) {
             LayoutParams lp = (LayoutParams) view.getLayoutParams();
             if (getOrientation() == HORIZONTAL) {
+                if(usefulSpace <= 0){
+                    lp.leftMargin = 0;
+                    lp.rightMargin = 0;
+                    lp.width = 0;
+                }
                 usefulSpace -= lp.leftMargin - lp.rightMargin;
+                if(usefulSpace > 0){
+                    view.measure(
+                            MeasureSpec.makeMeasureSpec(usefulSpace, MeasureSpec.AT_MOST),
+                            getChildMeasureSpec(heightMeasureSpec, getPaddingTop() + getPaddingBottom(), lp.height));
+                    if(view.getMeasuredWidth() >= usefulSpace){
+                        lp.width = usefulSpace;
+                        usefulSpace = 0;
+                    }else{
+                        usefulSpace -= view.getMeasuredWidth();
+                    }
+                }else{
+                    lp.leftMargin = 0;
+                    lp.rightMargin = 0;
+                    lp.width = 0;
+                }
             } else {
+                if(usefulSpace <= 0){
+                    lp.topMargin = 0;
+                    lp.bottomMargin = 0;
+                    lp.height = 0;
+                }
                 usefulSpace -= lp.topMargin - lp.bottomMargin;
-            }
-        }
-        int avgSpace = Math.max(0, usefulSpace / childList.size());
-        for (View view : childList) {
-            LayoutParams lp = (LayoutParams) view.getLayoutParams();
-            if (getOrientation() == HORIZONTAL) {
-                lp.width = avgSpace;
-            } else {
-                lp.height = avgSpace;
+                if(usefulSpace > 0){
+                    view.measure(
+                            getChildMeasureSpec(widthMeasureSpec, getPaddingLeft() + getPaddingRight(), lp.width),
+                            MeasureSpec.makeMeasureSpec(usefulSpace, MeasureSpec.AT_MOST));
+                    if(view.getMeasuredHeight() >= usefulSpace){
+                        lp.height = usefulSpace;
+                        usefulSpace = 0;
+                    }else{
+                        usefulSpace -= view.getMeasuredHeight();
+                    }
+                }else{
+                    lp.topMargin = 0;
+                    lp.bottomMargin = 0;
+                    lp.height = 0;
+                }
+
             }
         }
     }
@@ -264,15 +325,19 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
     }
 
     public static class LayoutParams extends LinearLayout.LayoutParams {
-        static final int PRIORITY_DISPOSABLE = 1;
-        static final int PRIORITY_MINI_CONTENT_PROTECTION = 2;
-        static final int PRIORITY_INCOMPRESSIBLE = 3;
+        public static final int PRIORITY_DISPOSABLE = 1;
+        public static final int PRIORITY_MINI_CONTENT_PROTECTION = 2;
+        public static final int PRIORITY_INCOMPRESSIBLE = 3;
 
         private int priority = PRIORITY_MINI_CONTENT_PROTECTION;
-        public int miniContentProtectionSize = 0;
+        private int miniContentProtectionSize = 0;
 
         private int backupWidth = Integer.MIN_VALUE;
         private int backupHeight = Integer.MIN_VALUE;
+        private int backupLeftMargin = 0;
+        private int backupRightMargin = 0;
+        private int backupTopMargin = 0;
+        private int backupBottomMargin = 0;
 
 
         public LayoutParams(Context c, AttributeSet attrs) {
@@ -312,6 +377,10 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
             this.priority = priority;
         }
 
+        public void setMiniContentProtectionSize(int miniContentProtectionSize) {
+            this.miniContentProtectionSize = miniContentProtectionSize;
+        }
+
         public int getPriority(int orientation) {
             if (weight > 0) {
                 return PRIORITY_DISPOSABLE;
@@ -331,13 +400,21 @@ public class QMUIPriorityLinearLayout extends QMUILinearLayout {
         void backupOrRestore() {
             if (backupWidth == Integer.MIN_VALUE) {
                 backupWidth = width;
+                backupLeftMargin = leftMargin;
+                backupRightMargin = rightMargin;
             } else {
                 width = backupWidth;
+                leftMargin = backupLeftMargin;
+                rightMargin = backupRightMargin;
             }
             if (backupHeight == Integer.MIN_VALUE) {
                 backupHeight = height;
+                backupTopMargin = topMargin;
+                backupBottomMargin = bottomMargin;
             } else {
                 height = backupHeight;
+                topMargin = backupTopMargin;
+                bottomMargin = backupBottomMargin;
             }
         }
     }

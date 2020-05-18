@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.widget;
 
 import android.animation.ValueAnimator;
@@ -6,13 +22,17 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 
-import com.qmuiteam.qmui.util.QMUIDisplayHelper;
 import com.qmuiteam.qmui.R;
+import com.qmuiteam.qmui.skin.QMUISkinValueBuilder;
+import com.qmuiteam.qmui.skin.defaultAttr.IQMUISkinDefaultAttrProvider;
+import com.qmuiteam.qmui.util.QMUIDisplayHelper;
+
+import androidx.annotation.NonNull;
+import androidx.collection.SimpleArrayMap;
 
 /**
  * 用于显示 Loading 的 {@link View}，支持颜色和大小的设置。
@@ -20,7 +40,7 @@ import com.qmuiteam.qmui.R;
  * @author cginechen
  * @date 2016-09-21
  */
-public class QMUILoadingView extends View {
+public class QMUILoadingView extends View implements IQMUISkinDefaultAttrProvider {
 
     private int mSize;
     private int mPaintColor;
@@ -29,6 +49,12 @@ public class QMUILoadingView extends View {
     private Paint mPaint;
     private static final int LINE_COUNT = 12;
     private static final int DEGREE_PER_LINE = 360 / LINE_COUNT;
+    private static SimpleArrayMap<String, Integer> sDefaultAttrs;
+
+    static {
+        sDefaultAttrs = new SimpleArrayMap<>();
+        sDefaultAttrs.put(QMUISkinValueBuilder.TINT_COLOR, R.attr.qmui_skin_support_loading_color);
+    }
 
     public QMUILoadingView(Context context) {
         this(context, null);
@@ -45,6 +71,7 @@ public class QMUILoadingView extends View {
         mPaintColor = array.getInt(R.styleable.QMUILoadingView_android_color, Color.WHITE);
         array.recycle();
         initPaint();
+
     }
 
     public QMUILoadingView(Context context, int size, int color) {
@@ -154,4 +181,8 @@ public class QMUILoadingView extends View {
         }
     }
 
+    @Override
+    public SimpleArrayMap<String, Integer> getDefaultSkinAttrs() {
+        return sDefaultAttrs;
+    }
 }

@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making QMUI_Android available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the MIT License (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.qmuiteam.qmui.util;
 
 import android.annotation.SuppressLint;
@@ -45,8 +61,8 @@ public class QMUIDisplayHelper {
      */
     private static Boolean sHasCamera = null;
 
-    private static int[] sPortraitRealSizeCache = null;
-    private static int[] sLandscapeRealSizeCache = null;
+//    private static int[] sPortraitRealSizeCache = null;
+//    private static int[] sLandscapeRealSizeCache = null;
 
     /**
      * 获取 DisplayMetrics
@@ -115,22 +131,35 @@ public class QMUIDisplayHelper {
      */
 
     public static int[] getRealScreenSize(Context context) {
-        if (QMUIDeviceHelper.isEssentialPhone() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Essential Phone 8.0版本后，Display size 会根据挖孔屏的设置而得到不同的结果，不能信任 cache
-            return doGetRealScreenSize(context);
-        }
-        int orientation = context.getResources().getConfiguration().orientation;
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            if (sLandscapeRealSizeCache == null) {
-                sLandscapeRealSizeCache = doGetRealScreenSize(context);
-            }
-            return sLandscapeRealSizeCache;
-        } else {
-            if (sPortraitRealSizeCache == null) {
-                sPortraitRealSizeCache = doGetRealScreenSize(context);
-            }
-            return sPortraitRealSizeCache;
-        }
+        // 切换屏幕导致宽高变化时不能用 cache，先去掉 cache
+        return doGetRealScreenSize(context);
+//        if (QMUIDeviceHelper.isEssentialPhone() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            // Essential Phone 8.0版本后，Display size 会根据挖孔屏的设置而得到不同的结果，不能信任 cache
+//            return doGetRealScreenSize(context);
+//        }
+//        int orientation = context.getResources().getConfiguration().orientation;
+//        int[] result;
+//        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+//            result = sLandscapeRealSizeCache;
+//            if (result == null) {
+//                result = doGetRealScreenSize(context);
+//                if(result[0] > result[1]){
+//                    // the result may be wrong sometimes, do not cache !!!!
+//                    sLandscapeRealSizeCache = result;
+//                }
+//            }
+//            return result;
+//        } else {
+//            result = sPortraitRealSizeCache;
+//            if (result == null) {
+//                result = doGetRealScreenSize(context);
+//                if(result[0] < result[1]){
+//                    // the result may be wrong sometimes, do not cache !!!!
+//                    sPortraitRealSizeCache = result;
+//                }
+//            }
+//            return result;
+//        }
     }
 
     private static int[] doGetRealScreenSize(Context context) {
